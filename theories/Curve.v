@@ -3,9 +3,9 @@
 
    Proved here: both moduli are prime (via [Certificates]), both fields are
    fields, neither curve has a singular point, the shared discriminant
-   [-10800] is a unit, the point [(-1, 2)]
-   lies on the curve, and [p - 1] and [q - 1] have 2-adic valuation exactly
-   32.
+   [-10800] is a unit, the point [(-1, 2)] lies on the curve, [p - 1] and
+   [q - 1] have 2-adic valuation exactly 32, and each field has a primitive
+   [2^32]-th root of unity.
 
    Not proved: the elliptic-curve group law, and the 2-cycle
    [|Pallas(F_p)| = q], [|Vesta(F_q)| = p].  Point counting (Schoof) is not
@@ -15,7 +15,7 @@
    final [+ 1]. *)
 
 From Stdlib Require Import ZArith Zmod Lia List Field_theory.
-From Pasta Require Import Certificates.
+From Pasta Require Import Pocklington Certificates.
 Local Open Scope Z_scope.
 
 (** Decimal and [2^254] forms of the hex literals in [Certificates]. *)
@@ -70,8 +70,8 @@ Proof.
     (conj prime_24859 (conj vesta_C_prime vesta_D_prime))))).
 Qed.
 
-(** Exact 2-valuation 32: the cofactor of [2^32] is odd, so these moduli
-    support an NTT of depth 32 and no more. *)
+(** Exact 2-valuation 32: the cofactor of [2^32] is odd, so neither field
+    has a root of unity of order [2^33], and no NTT deeper than 32 levels. *)
 
 Theorem pallas_two_adicity :
   exists t, pallas_p - 1 = 2 ^ 32 * t /\ t mod 2 = 1.
@@ -89,6 +89,93 @@ Proof.
   - apply (proj2 (Z.div_exact (vesta_p - 1) (2 ^ 32) ltac:(lia))).
     vm_compute. reflexivity.
   - vm_compute. reflexivity.
+Qed.
+
+(** Primitive [2^32]-th roots of unity, so NTTs of depth 32 do exist.  A
+    single computation, [w^(2^31) = -1], pins the order of [w] to exactly
+    [2^32]. *)
+
+Lemma opp_one_pow_odd [m] (t : Z) :
+  0 <= t -> Zmod.pow (Zmod.opp Zmod.one) (2 * t + 1) = Zmod.opp (Zmod.one : Zmod m).
+Proof.
+  intros Ht.
+  rewrite Zmod.pow_add_r_nonneg by lia.
+  rewrite Zmod.pow_mul_r_nonneg by lia.
+  rewrite Zmod.pow_opp_2, !Zmod.pow_1_l, Zmod.pow_1_r, Zmod.mul_1_l.
+  reflexivity.
+Qed.
+
+Lemma primitive_pow2_root [m] (w : Zmod m) (n : Z) :
+  3 <= m -> 1 <= n ->
+  Zmod.pow w (2 ^ (n - 1)) = Zmod.opp Zmod.one ->
+  Zmod.pow w (2 ^ n) = Zmod.one /\
+  (forall k, 0 <= k -> Zmod.pow w k = Zmod.one -> (2 ^ n | k)).
+Proof.
+  intros Hm Hn Hhalf.
+  assert (Hhalf_pos : 0 < 2 ^ (n - 1)) by (apply Z.pow_pos_nonneg; lia).
+  split.
+  - assert (E : 2 ^ n = 2 ^ (n - 1) * 2).
+    { replace n with (Z.succ (n - 1)) at 1 by lia.
+      rewrite Z.pow_succ_r by lia. ring. }
+    rewrite E, Zmod.pow_mul_r_nonneg, Hhalf by lia.
+    rewrite Zmod.pow_opp_2, Zmod.pow_1_l. reflexivity.
+  - intros k Hk Hwk.
+    assert (Hall : forall j : nat, Z.of_nat j <= n -> (2 ^ Z.of_nat j | k)).
+    { induction j as [|j IH]; intros Hj.
+      - cbn. apply Z.divide_1_l.
+      - rewrite Nat2Z.inj_succ in Hj |- *.
+        destruct (IH ltac:(lia)) as [c Hc].
+        assert (HJ : 0 <= Z.of_nat j) by lia.
+        set (J := Z.of_nat j) in *.
+        assert (HJpos : 0 < 2 ^ J) by (apply Z.pow_pos_nonneg; lia).
+        assert (Hc0 : 0 <= c) by nia.
+        destruct (Z.Even_or_Odd c) as [[t Ht]|[t Ht]].
+        + exists t. rewrite Hc, Ht, Z.pow_succ_r by lia. ring.
+        + exfalso. apply (Zmod.opp_1_neq_1 (m := m)); [lia|].
+          assert (Hrest : 0 < 2 ^ (n - 1 - J)) by (apply Z.pow_pos_nonneg; lia).
+          assert (Hsplit : 2 ^ (n - 1) = 2 ^ J * 2 ^ (n - 1 - J)).
+          { rewrite <- Z.pow_add_r by lia. f_equal. lia. }
+          transitivity (Zmod.pow w (2 ^ (n - 1) * c)).
+          * rewrite Zmod.pow_mul_r_nonneg, Hhalf, Ht by lia.
+            symmetry. apply opp_one_pow_odd. lia.
+          * replace (2 ^ (n - 1) * c) with (k * 2 ^ (n - 1 - J))
+              by (rewrite Hsplit, Hc; ring).
+            rewrite Zmod.pow_mul_r_nonneg, Hwk, Zmod.pow_1_l by lia.
+            reflexivity. }
+    replace n with (Z.of_nat (Z.to_nat n)) by lia.
+    apply Hall. lia.
+Qed.
+
+Definition pallas_omega : Zmod pallas_p :=
+  Zmod.of_Z pallas_p
+    0x2bce74deac30ebda362120830561f81aea322bf2b7bb7584bdad6fabd87ea32f.
+
+Definition vesta_omega : Zmod vesta_p :=
+  Zmod.of_Z vesta_p
+    0x2de6a9b8746d3f589e5c4dfd492ae26e9bb97ea3c106f049a70e2c1102b6d05f.
+
+Theorem pallas_omega_from_5 :
+  pallas_omega = Zmod.pow (Zmod.of_Z pallas_p 5) ((pallas_p - 1) / 2 ^ 32).
+Proof. apply zmod_eqb_true. vm_compute. reflexivity. Qed.
+
+Theorem vesta_omega_from_5 :
+  vesta_omega = Zmod.pow (Zmod.of_Z vesta_p 5) ((vesta_p - 1) / 2 ^ 32).
+Proof. apply zmod_eqb_true. vm_compute. reflexivity. Qed.
+
+Theorem pallas_omega_primitive :
+  Zmod.pow pallas_omega (2 ^ 32) = Zmod.one /\
+  (forall k, 0 <= k -> Zmod.pow pallas_omega k = Zmod.one -> (2 ^ 32 | k)).
+Proof.
+  apply primitive_pow2_root; [apply Z.leb_le; vm_compute; reflexivity | lia |].
+  apply zmod_eqb_true. vm_compute. reflexivity.
+Qed.
+
+Theorem vesta_omega_primitive :
+  Zmod.pow vesta_omega (2 ^ 32) = Zmod.one /\
+  (forall k, 0 <= k -> Zmod.pow vesta_omega k = Zmod.one -> (2 ^ 32 | k)).
+Proof.
+  apply primitive_pow2_root; [apply Z.leb_le; vm_compute; reflexivity | lia |].
+  apply zmod_eqb_true. vm_compute. reflexivity.
 Qed.
 
 (** Shared short Weierstrass equation [y^2 = x^3 + 5], discriminant

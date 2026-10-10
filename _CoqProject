@@ -3,3 +3,4 @@ theories/Trial.v
 theories/Pocklington.v
 theories/Certificates.v
 theories/Curve.v
+theories/Audit.v

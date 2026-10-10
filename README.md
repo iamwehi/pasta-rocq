@@ -32,3 +32,5 @@ make
 ```
 
 `Certificates.v` runs the modular exponentiations for the two 255-bit primes, and `Curve.v` runs the two 255-bit scalar multiplications. A full build takes about half a minute, almost all of it the scalar multiplications. `make clean` deletes the compiled files.
+
+`make check` guards the claim that the development has no axioms. It compiles `theories/Audit.v`, which prints the assumptions of the headline theorems and fails if any depends on an axiom, then re-checks every proof with `rocqchk`. The kernel check takes several minutes.

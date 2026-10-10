@@ -5,6 +5,9 @@
 *.aux
 *.cache
 .coqdeps.d
+.Makefile.coq.d
+.audit.out
+.rocqchk.out
 Makefile.coq
 Makefile.coq.conf
 CoqMakefile.conf

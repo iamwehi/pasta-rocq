@@ -2,7 +2,8 @@
    is the same equation over [Zmod vesta_p].
 
    Proved here: both moduli are prime (via [Certificates]), both fields are
-   fields, the shared discriminant [-10800] is a unit, the point [(-1, 2)]
+   fields, neither curve has a singular point, the shared discriminant
+   [-10800] is a unit, the point [(-1, 2)]
    lies on the curve, and [p - 1] and [q - 1] have 2-adic valuation exactly
    32.
 
@@ -137,6 +138,51 @@ Theorem vesta_discriminant_unit :
     (Zmod.of_Z vesta_p curve_discriminant) = Zmod.one.
 Proof.
   apply discriminant_unit; [exact vesta_p_prime|].
+  apply Z.ltb_lt. vm_compute. reflexivity.
+Qed.
+
+(** Nonsingularity, stated directly rather than through the discriminant.
+    With [F(x, y) = y^2 - x^3 - 5], a singular point is a solution of
+    [F = 0] at which both partials [-3x^2] and [2y] vanish. *)
+
+Definition singular_point (m : Z) (pt : Zmod m * Zmod m) : Prop :=
+  let (x, y) := pt in
+  on_curve m pt /\
+  Zmod.opp (Zmod.mul (Zmod.of_Z m 3) (Zmod.pow x 2)) = Zmod.zero /\
+  Zmod.mul (Zmod.of_Z m 2) y = Zmod.zero.
+
+Theorem curve_nonsingular (m : Z) :
+  Z.prime m -> 5 < m -> forall pt, ~ singular_point m pt.
+Proof.
+  intros Hp Hm [x y] (Hon & Hx & Hy).
+  unfold on_curve, curve_b in Hon.
+  assert (H2 : Zmod.of_Z m 2 <> Zmod.zero).
+  { apply Zmod.of_Z_nz. rewrite Z.mod_small by lia. lia. }
+  assert (H3 : Zmod.of_Z m 3 <> Zmod.zero).
+  { apply Zmod.of_Z_nz. rewrite Z.mod_small by lia. lia. }
+  assert (H5 : Zmod.of_Z m 5 <> Zmod.zero).
+  { apply Zmod.of_Z_nz. rewrite Z.mod_small by lia. lia. }
+  apply (proj1 (Zmod.mul_0_iff_prime Hp _ _)) in Hy.
+  destruct Hy as [|Hy]; [contradiction|]. subst y.
+  apply (f_equal Zmod.opp) in Hx. rewrite Zmod.opp_opp, Zmod.opp_0 in Hx.
+  apply (proj1 (Zmod.mul_0_iff_prime Hp _ _)) in Hx.
+  destruct Hx as [|Hx]; [contradiction|].
+  rewrite Zmod.pow_2_r in Hx.
+  apply (proj1 (Zmod.mul_0_iff_prime Hp _ _)) in Hx.
+  destruct Hx as [Hx|Hx]; subst x;
+    rewrite !Zmod.pow_0_l, Zmod.add_0_l in Hon by lia;
+    apply H5; symmetry; exact Hon.
+Qed.
+
+Theorem pallas_nonsingular : forall pt, ~ singular_point pallas_p pt.
+Proof.
+  apply curve_nonsingular; [exact pallas_p_prime|].
+  apply Z.ltb_lt. vm_compute. reflexivity.
+Qed.
+
+Theorem vesta_nonsingular : forall pt, ~ singular_point vesta_p pt.
+Proof.
+  apply curve_nonsingular; [exact vesta_p_prime|].
   apply Z.ltb_lt. vm_compute. reflexivity.
 Qed.
 

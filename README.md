@@ -12,7 +12,8 @@ Both curves are the short Weierstrass curve `y² = x³ + 5`.
 - `pallas_p` and `vesta_p` are prime, by Pocklington's criterion. A square-free divisor `F` of `n - 1` with `F² ≥ n`, a witness `a^(n-1) ≡ 1 (mod n)`, and `gcd(a^((n-1)/q) - 1, n) = 1` for each prime `q` dividing `F`, imply that `n` is prime. The leaves of the certificate tree are trial division; each step above that is a few `vm_compute` goals.
 - The factorizations `p - 1 = 2^32 · 3 · 463 · A · B` and `q - 1 = 2^32 · 3² · 1709 · 24859 · C · D`, with every factor prime, and with the cofactor of `2^32` odd. The 2-adic valuation is exactly 32.
 - Hex, decimal, and `2^254 + offset` forms of both moduli, and the bounds `2^254 < p, q < 2^255`.
-- The discriminant of `y² = x³ + 5` is `-10800`, and it is a unit in both fields, so both curves are elliptic.
+- Both curves are nonsingular, hence elliptic: no point of `y² = x³ + 5` has both partial derivatives `-3x²` and `2y` equal to zero. This is proved directly, because the equivalence between a nonzero discriminant and nonsingularity is not formalized.
+- The discriminant of `y² = x³ + 5` is `-10800`, and it is a unit in both fields.
 - `Zmod pallas_p` and `Zmod vesta_p` are fields.
 - The point `(-1, 2)` lies on the curve over every `Zmod m`. It is the integer identity `2² = (-1)³ + 5`.
 

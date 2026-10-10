@@ -16,9 +16,9 @@ Both curves are the short Weierstrass curve `y² = x³ + 5`.
 - `Zmod pallas_p` and `Zmod vesta_p` are fields.
 - The point `(-1, 2)` lies on the curve over every `Zmod m`. It is the integer identity `2² = (-1)³ + 5`.
 
-## What is axiomatized
+## What is not proved
 
-The 2-cycle is not proved. `|Pallas(F_p)| = q` and `|Vesta(F_q)| = p` need a point count (Schoof), which the standard library does not provide. `cycle_conjecture_pallas` and `cycle_conjecture_vesta` state it for the affine points: a duplicate-free list of solutions of `y² = x³ + 5` whose length is the other prime minus one. The point at infinity makes up the group order. These two axioms are the only assumptions of the development.
+The 2-cycle is not proved. `|Pallas(F_p)| = q` and `|Vesta(F_q)| = p` need a point count (Schoof), which the standard library does not provide. `cycle_conjecture_pallas` and `cycle_conjecture_vesta` state it for the affine points: a duplicate-free list of solutions of `y² = x³ + 5` whose length is the other prime minus one. The point at infinity makes up the group order. Both are defined as propositions, not axioms, so the development has no axioms; a result that depends on the cycle has to take them as hypotheses.
 
 The elliptic-curve group law is not formalized. Associativity is the long part, and nothing here depends on it.
 

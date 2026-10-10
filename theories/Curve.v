@@ -8,9 +8,10 @@
 
    Not proved: the elliptic-curve group law, and the 2-cycle
    [|Pallas(F_p)| = q], [|Vesta(F_q)| = p].  Point counting (Schoof) is not
-   in the standard library, so the cycle is stated as two axioms, in the
-   same way the Lean development leaves it as a conjecture.  Affine points
-   only: the point at infinity accounts for the final [+ 1]. *)
+   in the standard library, so the cycle is stated as two propositions and
+   left unproved, in the same way the Lean development leaves it as a
+   conjecture.  Affine points only: the point at infinity accounts for the
+   final [+ 1]. *)
 
 From Stdlib Require Import ZArith Zmod Lia List Field_theory.
 From Pasta Require Import Certificates.
@@ -166,15 +167,16 @@ Proof.
 Qed.
 
 (** The 2-cycle.  [pts] enumerates the affine points, so its length is one
-    less than the group order. *)
+    less than the group order.  These are statements, not assumptions:
+    anything that needs the cycle must take them as hypotheses. *)
 
-Axiom cycle_conjecture_pallas :
+Definition cycle_conjecture_pallas : Prop :=
   exists pts : list (Zmod pallas_p * Zmod pallas_p),
     NoDup pts /\
     Z.of_nat (length pts) = vesta_p - 1 /\
     (forall pt, In pt pts <-> on_curve pallas_p pt).
 
-Axiom cycle_conjecture_vesta :
+Definition cycle_conjecture_vesta : Prop :=
   exists pts : list (Zmod vesta_p * Zmod vesta_p),
     NoDup pts /\
     Z.of_nat (length pts) = pallas_p - 1 /\

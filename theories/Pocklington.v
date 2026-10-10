@@ -1,7 +1,8 @@
-(* Pocklington's criterion, in the square-free form used for the Pasta primes.
+(* Pocklington's criterion, in the two forms used for the Pasta primes.
 
-   If [n - 1] has a square-free divisor [F] with [F * F >= n], and a base [a]
-   satisfies [a^(n-1) ≡ 1 (mod n)] together with
+   If [n - 1] has a divisor [F] with [F * F >= n], where [F] is a prime
+   ([pocklington1]) or a product of two distinct primes ([pocklington2]),
+   and a base [a] satisfies [a^(n-1) ≡ 1 (mod n)] together with
    [gcd(a^((n-1)/q) - 1, n) = 1] for every prime [q] dividing [F], then [n]
    is prime.  The powers are [Zmod.pow], so a certificate is a handful of
    [vm_compute] goals. *)
@@ -24,8 +25,8 @@ Proof.
 Qed.
 
 (* A proper factor of [n], or a proof that [n] is prime.  The search is by
-   well-founded recursion on [n - start] and is never executed; the Pasta
-   certificates go through Pocklington instead. *)
+   induction on a fuel counter equal to [n - start] and is never executed;
+   the Pasta certificates go through Pocklington instead. *)
 Lemma factor_search_fuel (fuel : nat) (n start : Z) :
   Z.to_nat (n - start) = fuel ->
   1 < n -> 1 < start <= n ->

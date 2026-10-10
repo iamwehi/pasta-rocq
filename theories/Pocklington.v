@@ -8,6 +8,7 @@
    [vm_compute] goals. *)
 
 From Stdlib Require Import ZArith Zmod Lia.
+From Pasta Require Import Trial.
 Local Open Scope Z_scope.
 
 Lemma zmod_eqb_true [m] (x y : Zmod m) :
@@ -88,36 +89,12 @@ Proof.
        exists p, Z.prime p /\ (p | n) /\ p * p <= n)).
   intros n IH Hn Hnp.
   destruct (prime_or_factor n Hn) as [[d [Hd Hdiv]]|Hp]; [|contradiction].
-  assert (Hn' : n = d * (n / d)).
-  { apply (proj2 (Z.div_exact n d ltac:(lia))).
-    apply (proj2 (Z.mod_divide n d ltac:(lia))). exact Hdiv. }
-  set (m := n / d) in *.
-  assert (Hm : 1 < m < n) by nia.
-  set (k := Z.min d m).
-  assert (Hk_lt : 0 <= k < n).
-  { unfold k. destruct (Z_le_dec d m) as [Hdm|Hmd].
-    - rewrite (Z.min_l _ _ Hdm). lia.
-    - assert (Hmdle : m <= d) by lia.
-      rewrite (Z.min_r d m Hmdle). lia. }
-  assert (Hk_big : 1 < k).
-  { unfold k. destruct (Z_le_dec d m) as [Hdm|Hmd].
-    - rewrite (Z.min_l _ _ Hdm). lia.
-    - assert (Hmdle : m <= d) by lia.
-      rewrite (Z.min_r d m Hmdle). lia. }
-  assert (Hk_div : (k | n)).
-  { unfold k. destruct (Z_le_dec d m) as [Hdm|Hmd].
-    - rewrite (Z.min_l _ _ Hdm). exact Hdiv.
-    - assert (Hmdle : m <= d) by lia.
-      rewrite (Z.min_r d m Hmdle). exists d. exact Hn'. }
-  assert (Hk_sq : k * k <= n).
-  { unfold k. destruct (Z_le_dec d m) as [Hdm|Hmd].
-    - rewrite (Z.min_l _ _ Hdm). rewrite Hn'. apply Z.mul_le_mono_nonneg; lia.
-    - assert (Hmdle : m <= d) by lia.
-      rewrite (Z.min_r d m Hmdle). rewrite Hn'. apply Z.mul_le_mono_nonneg; lia. }
-  destruct (prime_or_factor k Hk_big) as [[d' [Hd' Hdiv']]|Hkprime].
+  set (k := Z.min d (n / d)).
+  destruct (smaller_factor n d k eq_refl Hd Hdiv) as [Hk_range [Hk_sq Hk_div]].
+  destruct (prime_or_factor k ltac:(lia)) as [[d' [Hd' Hdiv']]|Hkprime].
   - assert (~ Z.prime k).
     { intros Hkpr. apply (proj2 Hkpr d'); auto. }
-    destruct (IH k ltac:(lia) Hk_big H) as [p [Hp [Hpdiv Hpsq]]].
+    destruct (IH k ltac:(lia) ltac:(lia) H) as [p [Hp [Hpdiv Hpsq]]].
     exists p. split; [exact Hp|]. split.
     + eapply Z.divide_trans; eauto.
     + lia.

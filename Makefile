@@ -11,7 +11,7 @@ all: theories/Curve.vo
 theories/Trial.vo: theories/Trial.v
 	$(ROCQ) theories/Trial.v
 
-theories/Pocklington.vo: theories/Pocklington.v
+theories/Pocklington.vo: theories/Pocklington.v theories/Trial.vo
 	$(ROCQ) theories/Pocklington.v
 
 theories/Certificates.vo: theories/Certificates.v theories/Trial.vo theories/Pocklington.vo

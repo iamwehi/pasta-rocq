@@ -67,6 +67,32 @@ Proof.
            --- exact Hsq.
 Qed.
 
+(* The smaller of a proper factor [d] of [n] and its cofactor [n / d].
+   It divides [n], lies strictly between 1 and [n], and is at most [sqrt n].
+   [Pocklington.small_prime_factor] uses the same fact. *)
+Lemma smaller_factor (n d k : Z) :
+  k = Z.min d (n / d) ->
+  1 < d < n -> (d | n) ->
+  1 < k < n /\ k * k <= n /\ (k | n).
+Proof.
+  intros Hk Hd Hdiv.
+  assert (Hn' : n = d * (n / d)).
+  { apply (proj2 (Z.div_exact n d ltac:(lia))).
+    apply (proj2 (Z.mod_divide n d ltac:(lia))). exact Hdiv. }
+  set (m := n / d) in *.
+  assert (Hm : 1 < m < n) by nia.
+  rewrite Hk. destruct (Z_le_dec d m) as [Hdm|Hmd].
+  - rewrite (Z.min_l d m Hdm).
+    split; [lia|]. split.
+    + rewrite Hn'. apply Z.mul_le_mono_nonneg; lia.
+    + exact Hdiv.
+  - assert (Hmdle : m <= d) by lia.
+    rewrite (Z.min_r d m Hmdle).
+    split; [lia|]. split.
+    + rewrite Hn'. apply Z.mul_le_mono_nonneg; lia.
+    + exists d. exact Hn'.
+Qed.
+
 (* A composite number has a factor [k] with [1 < k] and [k * k <= n].
    If [n] is odd that factor is odd and at least 3, so the trial walk sees it. *)
 Lemma no_odd_divisor_prime n :
@@ -78,38 +104,22 @@ Proof.
   intros Hn Hodd Hall.
   split; [exact Hn|].
   intros d Hd Hdiv.
-  assert (0 < d) by lia.
-  assert (Hn' : n = d * (n / d)).
-  { apply (proj2 (Z.div_exact n d ltac:(lia))).
-    apply (proj2 (Z.mod_divide n d ltac:(lia))). exact Hdiv. }
-  set (m := n / d) in *.
-  assert (Hm : 1 < m < n) by nia.
-  set (k := Z.min d m).
-  assert (Hk : 1 < k /\ k * k <= n /\ (k | n)).
-  { unfold k. destruct (Z_le_dec d m) as [Hdm|Hmd].
-    - rewrite (Z.min_l d m Hdm).
-      split; [lia|]. split.
-      + rewrite Hn'. apply Z.mul_le_mono_nonneg; lia.
-      + exact Hdiv.
-    - assert (Hmdle : m <= d) by lia. rewrite (Z.min_r d m Hmdle).
-      split; [lia|]. split.
-      + rewrite Hn'. apply Z.mul_le_mono_nonneg; lia.
-      + exists d. exact Hn'. }
+  set (k := Z.min d (n / d)).
+  destruct (smaller_factor n d k eq_refl Hd Hdiv) as [Hk_range [Hk_sq Hk_div]].
   assert (Hkodd : k mod 2 = 1).
   { destruct (Z.eq_dec (k mod 2) 0) as [Hk0|Hk1].
     - exfalso.
       assert (H2k : (2 | k)).
       { apply (proj1 (Z.mod_divide k 2 ltac:(lia))). exact Hk0. }
-      destruct Hk as [_ [_ Hkdiv]].
       assert (H2n : (2 | n)) by (eapply Z.divide_trans; eauto).
       apply Hodd. apply (proj2 (Z.mod_divide n 2 ltac:(lia))). exact H2n.
     - pose proof (Z.mod_pos_bound k 2 ltac:(lia)). lia. }
   assert (Hkn0 : n mod k = 0).
-  { apply (proj2 (Z.mod_divide n k ltac:(lia))). tauto. }
+  { apply (proj2 (Z.mod_divide n k ltac:(lia))). exact Hk_div. }
   assert (Hk3 : 3 <= k).
   { assert (k <> 2) by (intros ->; lia). lia. }
   assert (Hneq : n mod k <> 0).
-  { apply Hall; try lia; tauto. }
+  { apply Hall; [exact Hk3| exact Hkodd| exact Hk_sq]. }
   congruence.
 Qed.
 

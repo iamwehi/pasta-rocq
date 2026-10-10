@@ -16,13 +16,14 @@ Both curves are the short Weierstrass curve `y² = x³ + 5`.
 - Both curves are nonsingular, hence elliptic: no point of `y² = x³ + 5` has both partial derivatives `-3x²` and `2y` equal to zero. This is proved directly, because the equivalence between a nonzero discriminant and nonsingularity is not formalized.
 - The discriminant of `y² = x³ + 5` is `-10800`, and it is a unit in both fields.
 - `Zmod pallas_p` and `Zmod vesta_p` are fields.
-- The point `(-1, 2)` lies on the curve over every `Zmod m`. It is the integer identity `2² = (-1)³ + 5`.
+- The point `G = (-1, 2)` lies on the curve over every `Zmod m`. It is the integer identity `2² = (-1)³ + 5`.
+- `q · G = O` on Pallas and `p · G = O` on Vesta, computed by double-and-add with the affine chord-and-tangent formulas (`point_add`, `scalar_mul`).
 
 ## What is not proved
 
 The 2-cycle is not proved. `|Pallas(F_p)| = q` and `|Vesta(F_q)| = p` need a point count (Schoof), which the standard library does not provide. `cycle_conjecture_pallas` and `cycle_conjecture_vesta` state it for the affine points: a duplicate-free list of solutions of `y² = x³ + 5` whose length is the other prime minus one. The point at infinity makes up the group order. Both are defined as propositions, not axioms, so the development has no axioms; a result that depends on the cycle has to take them as hypotheses.
 
-The elliptic-curve group law is not formalized. Associativity is the long part, and nothing here depends on it.
+The elliptic-curve group law is not formalized; associativity is the long part. Without it, `q · G = O` is a computation with the addition formulas, not a theorem that `G` has order `q`. With the group law, `G ≠ O`, `q · G = O`, and `q` prime would give order exactly `q`. Adding Hasse's bound would then prove the 2-cycle, because `q` is the only multiple of `q` within `2√p` of `p + 1`.
 
 ## Build
 
@@ -30,4 +31,4 @@ The elliptic-curve group law is not formalized. Associativity is the long part, 
 make
 ```
 
-`Certificates.v` runs the modular exponentiations for the two 255-bit primes. A full build takes a few seconds. `make clean` deletes the compiled files.
+`Certificates.v` runs the modular exponentiations for the two 255-bit primes, and `Curve.v` runs the two 255-bit scalar multiplications. A full build takes about half a minute, almost all of it the scalar multiplications. `make clean` deletes the compiled files.

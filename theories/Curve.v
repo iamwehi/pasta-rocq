@@ -3,7 +3,9 @@
 
    Proved here: both moduli are prime (via [Certificates]), both fields are
    fields, neither curve has a singular point, the shared discriminant
-   [-10800] is a unit, the point [(-1, 2)] lies on the curve, [p - 1] and
+   [-10800] is a unit, the point [G = (-1, 2)] lies on the curve, with
+   [q * G = O] on Pallas and [p * G = O] on Vesta under the affine
+   addition formulas, [p - 1] and
    [q - 1] have 2-adic valuation exactly 32, and each field has a primitive
    [2^32]-th root of unity.
 
@@ -297,6 +299,65 @@ Proof.
   rewrite <- Zmod.of_Z_add.
   replace ((-1) ^ 3 + 5) with (2 ^ 2) by reflexivity.
   reflexivity.
+Qed.
+
+(** Affine chord-and-tangent arithmetic, with [None] as the point at
+    infinity.  The formulas are only meaningful for points on the curve.
+    The group law is not proved, so [q * G = O] below is a computation with
+    these formulas, not yet a theorem about the order of [G]. *)
+
+Definition point (m : Z) : Type := option (Zmod m * Zmod m).
+
+Definition point_opp [m] (P : point m) : point m :=
+  match P with
+  | None => None
+  | Some (x, y) => Some (x, Zmod.opp y)
+  end.
+
+Definition point_add [m] (P Q : point m) : point m :=
+  match P, Q with
+  | None, _ => Q
+  | _, None => P
+  | Some (x1, y1), Some (x2, y2) =>
+      if andb (Zmod.eqb x1 x2) (Zmod.eqb (Zmod.add y1 y2) Zmod.zero) then None
+      else
+        let l :=
+          if Zmod.eqb x1 x2
+          then Zmod.mdiv (Zmod.mul (Zmod.of_Z m 3) (Zmod.pow x1 2))
+                 (Zmod.mul (Zmod.of_Z m 2) y1)
+          else Zmod.mdiv (Zmod.sub y2 y1) (Zmod.sub x2 x1) in
+        let x3 := Zmod.sub (Zmod.pow l 2) (Zmod.add x1 x2) in
+        Some (x3, Zmod.sub (Zmod.mul l (Zmod.sub x1 x3)) y1)
+  end.
+
+Fixpoint scalar_mul_pos [m] (k : positive) (P : point m) : point m :=
+  match k with
+  | xH => P
+  | xO k' => let R := scalar_mul_pos k' P in point_add R R
+  | xI k' => let R := scalar_mul_pos k' P in point_add P (point_add R R)
+  end.
+
+Definition scalar_mul [m] (k : Z) (P : point m) : point m :=
+  match k with
+  | Z0 => None
+  | Zpos k' => scalar_mul_pos k' P
+  | Zneg k' => point_opp (scalar_mul_pos k' P)
+  end.
+
+Theorem pallas_generator_mul_order :
+  Some (generator pallas_p) <> None /\
+  scalar_mul vesta_p (Some (generator pallas_p)) = None.
+Proof.
+  split; [discriminate|].
+  vm_cast_no_check (@eq_refl (point pallas_p) None).
+Qed.
+
+Theorem vesta_generator_mul_order :
+  Some (generator vesta_p) <> None /\
+  scalar_mul pallas_p (Some (generator vesta_p)) = None.
+Proof.
+  split; [discriminate|].
+  vm_cast_no_check (@eq_refl (point vesta_p) None).
 Qed.
 
 (** The 2-cycle.  [pts] enumerates the affine points, so its length is one
